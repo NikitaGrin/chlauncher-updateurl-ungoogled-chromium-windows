@@ -25,6 +25,7 @@ jobs:
 
           # Extract the download URL for the ZIP file
           ZIP_URL=$(echo "$LATEST_RELEASE" | jq -r '.assets[] | select(.name | test("ungoogled-chromium_.*_windows_x64.zip")) | .browser_download_url')
+          echo ZIP_URL
 
           VERSION=$(echo "$LATEST_RELEASE" | jq -r ".tag_name")
 
