@@ -1,4 +1,4 @@
-name: Get Latest Release URL
+name: Create Release with Latest URL
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  get-latest-url:
+  create-release:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,24 +25,19 @@ jobs:
 
           # Extract the download URL for the ZIP file
           ZIP_URL=$(echo "$LATEST_RELEASE" | jq -r '.assets[] | select(.name | test("ungoogled-chromium_.*_windows_x64.zip")) | .browser_download_url')
-          echo ZIP_URL
+          echo "Latest ZIP URL: $ZIP_URL"
 
           VERSION=$(echo "$LATEST_RELEASE" | jq -r ".tag_name")
 
           # Output the URL
           echo "Latest ZIP URL: $ZIP_URL"
 
-          # Write the URL to updateurl.txt
-          echo "$ZIP_URL" > updateurl.txt
-
+          # Set outputs for later steps
+          echo "::set-output name=zip_url::$ZIP_URL"
           echo "::set-output name=version::$VERSION"
 
-      - name: Commit and push changes
+      - name: Create Release
         run: |
-          git config --global user.email "you@example.com"
-          git config --global user.name "Your Name"
-          git add updateurl.txt
-          git commit -m "Update to version ${{ steps.get_url.outputs.version }}"
-          git push
+          gh release create "${{ steps.get_url.outputs.version }}" updateurl.txt --title "Release ${{ steps.get_url.outputs.version }}" --notes "Latest release URL: ${{ steps.get_url.outputs.zip_url }}"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
