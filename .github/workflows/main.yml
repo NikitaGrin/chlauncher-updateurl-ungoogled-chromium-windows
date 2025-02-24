@@ -1,0 +1,47 @@
+name: Get Latest Release URL
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  get-latest-url:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Get latest release URL
+        id: get_url
+        run: |
+          REPO="ungoogled-software/ungoogled-chromium-windows"
+          FILE_NAME="ungoogled-chromium_*.zip"
+
+          # Fetch the latest release information
+          LATEST_RELEASE=$(curl -s "https://api.github.com/repos/$REPO/releases/latest")
+
+          # Extract the download URL for the ZIP file
+          ZIP_URL=$(echo "$LATEST_RELEASE" | jq -r ".assets[] | select(.name | test(\"$FILE_NAME\")) | .browser_download_url")
+
+          VERSION=$(echo "$LATEST_RELEASE" | jq -r ".tag_name")
+
+          # Output the URL
+          echo "Latest ZIP URL: $ZIP_URL"
+
+          # Write the URL to updateurl.txt
+          echo "$ZIP_URL" > updateurl.txt
+
+          echo "::set-output name=version::$VERSION"
+
+      - name: Commit and push changes
+        run: |
+          git add updateurl.txt
+          git commit -m "Update to version ${{ steps.get_url.outputs.version }}"
+          git config --global user.email "you@example.com"
+          git config --global user.name "Your Name"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
